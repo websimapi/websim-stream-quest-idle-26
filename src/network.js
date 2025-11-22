@@ -130,18 +130,31 @@ export class NetworkManager {
 
     async exportChannelData() {
         if (!this.isHost) return [];
-        const players = await getAllPlayers();
-        appendHostLog(`Exported ${players.length} players for current channel.`);
-        return players;
+        try {
+            const players = await getAllPlayers();
+            appendHostLog(`Exported ${players.length} players for current channel.`);
+            return players;
+        } catch (err) {
+            console.error('Export failed', err);
+            appendHostLog(`Error during export: ${err?.message || err}`);
+            return [];
+        }
     }
 
     async importChannelData(playersArray, replaceAllPlayersFn) {
         if (!this.isHost) return;
         if (typeof replaceAllPlayersFn !== 'function') return;
 
-        await replaceAllPlayersFn(playersArray || []);
-        appendHostLog(`Imported ${playersArray?.length || 0} players for current channel (overwrote existing data).`);
-        await this.refreshPlayerList();
+        try {
+            const count = playersArray?.length || 0;
+            appendHostLog(`Starting import of ${count} players for current channel (will overwrite existing data).`);
+            await replaceAllPlayersFn(playersArray || []);
+            appendHostLog(`Imported ${count} players for current channel (overwrote existing data).`);
+            await this.refreshPlayerList();
+        } catch (err) {
+            console.error('Import failed', err);
+            appendHostLog(`Error during import: ${err?.message || err}`);
+        }
     }
 
     async refreshPlayerList() {
